@@ -91,20 +91,25 @@ def to_turn_detection(
 
     if isinstance(turn_detection, TurnDetection):
         if turn_detection.type == "server_vad":
-            return realtime.realtime_audio_input_turn_detection.ServerVad(
-                type="server_vad",
-                threshold=turn_detection.threshold,
-                prefix_padding_ms=turn_detection.prefix_padding_ms,
-                silence_duration_ms=turn_detection.silence_duration_ms,
-                create_response=turn_detection.create_response,
-            )
+            kwargs = {"type": "server_vad"}
+            if turn_detection.threshold is not None:
+                kwargs["threshold"] = turn_detection.threshold
+            if turn_detection.prefix_padding_ms is not None:
+                kwargs["prefix_padding_ms"] = turn_detection.prefix_padding_ms
+            if turn_detection.silence_duration_ms is not None:
+                kwargs["silence_duration_ms"] = turn_detection.silence_duration_ms
+            if turn_detection.create_response is not None:
+                kwargs["create_response"] = turn_detection.create_response
+            return realtime.realtime_audio_input_turn_detection.ServerVad(**kwargs)
         elif turn_detection.type == "semantic_vad":
-            return realtime.realtime_audio_input_turn_detection.SemanticVad(
-                type="semantic_vad",
-                create_response=turn_detection.create_response,
-                eagerness=turn_detection.eagerness,
-                interrupt_response=turn_detection.interrupt_response,
-            )
+            kwargs = {"type": "semantic_vad"}
+            if turn_detection.create_response is not None:
+                kwargs["create_response"] = turn_detection.create_response
+            if turn_detection.eagerness is not None:
+                kwargs["eagerness"] = turn_detection.eagerness
+            if turn_detection.interrupt_response is not None:
+                kwargs["interrupt_response"] = turn_detection.interrupt_response
+            return realtime.realtime_audio_input_turn_detection.SemanticVad(**kwargs)
         else:
             raise ValueError(f"unsupported turn detection type: {turn_detection.type}")
     return turn_detection
@@ -150,9 +155,7 @@ def livekit_item_to_openai_item(item: llm.ChatItem) -> realtime.ConversationItem
                 content=system_content,
             )
         elif item.role == "assistant":
-            assistant_content: list[
-                realtime.realtime_conversation_item_assistant_message.Content
-            ] = []
+            assistant_content: list[realtime.realtime_conversation_item_assistant_message.Content] = []
             for c in item.content:
                 if isinstance(c, str):
                     assistant_content.append(
@@ -190,9 +193,7 @@ def livekit_item_to_openai_item(item: llm.ChatItem) -> realtime.ConversationItem
                         )
                     )
                 elif isinstance(c, llm.AudioContent):
-                    encoded_audio = base64.b64encode(rtc.combine_audio_frames(c.frame).data).decode(
-                        "utf-8"
-                    )
+                    encoded_audio = base64.b64encode(rtc.combine_audio_frames(c.frame).data).decode("utf-8")
                     user_content.append(
                         realtime.realtime_conversation_item_user_message.Content(
                             type="input_audio",
