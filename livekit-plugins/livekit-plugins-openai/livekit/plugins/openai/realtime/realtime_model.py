@@ -14,6 +14,8 @@ from typing import Any, Literal, Optional, Union, cast, overload
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import aiohttp
+from pydantic import BaseModel, ValidationError
+
 from livekit import rtc
 from livekit.agents import APIConnectionError, APIError, io, llm, utils
 from livekit.agents.llm.tool_context import (
@@ -30,7 +32,6 @@ from livekit.agents.types import (
     NotGivenOr,
 )
 from livekit.agents.utils import is_given
-from pydantic import BaseModel, ValidationError
 
 from openai.types import realtime
 from openai.types.beta.realtime.session import (
@@ -312,11 +313,7 @@ class RealtimeModel(llm.RealtimeModel):
             )
         )
 
-        is_azure = (
-            api_version is not None
-            or entra_token is not None
-            or azure_deployment is not None
-        )
+        is_azure = (api_version is not None or entra_token is not None or azure_deployment is not None)
 
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if api_key is None and not is_azure:
@@ -1128,7 +1125,9 @@ class RealtimeSession(
 
         if is_given(turn_detection):
             self._realtime_model._opts.turn_detection = turn_detection  # type: ignore
-            input_cfg = RealtimeAudioConfigInput.model_construct(turn_detection=turn_detection)
+            input_cfg = RealtimeAudioConfigInput.model_construct(
+                turn_detection=turn_detection
+            )
             if audio_cfg is None:
                 audio_cfg = RealtimeAudioConfig.model_construct(input=input_cfg)
             else:
@@ -1141,7 +1140,9 @@ class RealtimeSession(
             kwargs["max_response_output_tokens"] = max_response_output_tokens
 
         if is_given(input_audio_transcription):
-            self._realtime_model._opts.input_audio_transcription = input_audio_transcription
+            self._realtime_model._opts.input_audio_transcription = (
+                input_audio_transcription
+            )
             if audio_cfg is None:
                 audio_cfg = RealtimeAudioConfig.model_construct(
                     input=RealtimeAudioConfigInput.model_construct(
@@ -1157,9 +1158,15 @@ class RealtimeSession(
                     audio_cfg.input.transcription = input_audio_transcription
 
         if is_given(input_audio_noise_reduction):
-            self._realtime_model._opts.input_audio_noise_reduction = input_audio_noise_reduction  # type: ignore
-            noise_cfg = None if input_audio_noise_reduction is None else realtime.realtime_audio_config_input.NoiseReduction(
-                type=input_audio_noise_reduction
+            self._realtime_model._opts.input_audio_noise_reduction = (
+                input_audio_noise_reduction  # type: ignore
+            )
+            noise_cfg = (
+                None
+                if input_audio_noise_reduction is None
+                else realtime.realtime_audio_config_input.NoiseReduction(
+                    type=input_audio_noise_reduction
+                )
             )
             if audio_cfg is None:
                 audio_cfg = RealtimeAudioConfig.model_construct(
@@ -1183,7 +1190,9 @@ class RealtimeSession(
                 )
             else:
                 if audio_cfg.output is None:
-                    audio_cfg.output = RealtimeAudioConfigOutput.model_construct(speed=speed)
+                    audio_cfg.output = RealtimeAudioConfigOutput.model_construct(
+                        speed=speed
+                    )
                 else:
                     audio_cfg.output.speed = speed
 
